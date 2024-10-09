@@ -23,7 +23,7 @@ function App() {
   // Função para buscar o imóvel e suas fotos pelo código (sem uso de token)
   const buscarImovel = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.66:3001/imovel/${codigoImovel}/fotos`);
+      const response = await axios.get(`http://192.168.0.00:3001/imovel/${codigoImovel}/fotos`);
       setImovel(response.data.imovel);
       setFotos(response.data.fotos);
       setDescricaoEditavel(response.data.imovel.descricao);
@@ -46,7 +46,7 @@ function App() {
   // Função para gerar o PDF com as imagens selecionadas (sem uso de token)
   const gerarPDF = async () => {
     try {
-      const response = await axios.post('http://192.168.0.66:3001/gerar-pdf', {
+      const response = await axios.post('http://192.168.0.00:3001/gerar-pdf', {
         imagensSelecionadas,
       }, {
         responseType: 'blob',
