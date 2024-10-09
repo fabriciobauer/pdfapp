@@ -12,7 +12,6 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Conectar ao banco de dados MySQL
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -29,12 +28,12 @@ db.connect((err) => {
 });
 
 app.use(cors({
-  origin: '*', // Isso permite que qualquer origem acesse o back-end
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type'],
 }));
 
-// Rota de login (Removida geração de token JWT)
+// Rota de login
 app.post('/login', (req, res) => {
   const { username, senha } = req.body;
 
@@ -138,7 +137,6 @@ app.post('/gerar-pdf', async (req, res) => {
 
 const PORT = 3001;
 
-// Iniciar o servidor e permitir conexões de qualquer IP (rede local)
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
