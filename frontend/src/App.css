@@ -61,7 +61,7 @@ input[type="text"] {
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
-  box-sizing: border-box; 
+  box-sizing: border-box; /* Para garantir que o padding não afete a largura */
 }
 
 button {
@@ -134,9 +134,9 @@ p {
 @media (max-width: 768px) {
   /* Ajustar a largura dos inputs e textos */
   input[type="text"] {
-    width: 100%; 
-    margin-right: 0; 
-    margin-bottom: 10px; 
+    width: 100%; /* Inputs ocupam toda a largura em telas menores */
+    margin-right: 0; /* Remove margem lateral */
+    margin-bottom: 10px; /* Adiciona espaçamento abaixo do input */
   }
 
   button {
@@ -152,7 +152,7 @@ p {
 
   /* Ajustar o tamanho das imagens */
   img {
-    width: 100%; 
+    width: 100%; /* Imagens ocupam toda a largura em telas menores */
     max-width: 100%;
     height: auto; /* Mantém a proporção */
   }
@@ -164,26 +164,26 @@ p {
 
   /* Ajustar tamanhos de fonte para caber melhor */
   h1, h2, p, h3 {
-    font-size: 18px; 
+    font-size: 18px; /* Reduzir o tamanho do título */
   }
 
   textarea {
-    font-size: 14px; 
+    font-size: 14px; /* Reduzir o tamanho do texto da área de texto */
   }
 }
 
 @media (max-width: 480px) {
   /* Ajustes ainda mais específicos para telas muito pequenas */
   .box, .container {
-    padding: 10px; 
-    margin: 10px; 
+    padding: 10px; /* Reduzir o padding para economizar espaço */
+    margin: 10px; /* Reduzir a margem externa */
   }
 
   h1, h2 {
-    font-size: 16px; 
+    font-size: 16px; /* Tamanhos menores para títulos */
   }
 
   input[type="text"], button {
-    font-size: 14px; 
+    font-size: 14px; /* Texto menor em inputs e botões */
   }
 }

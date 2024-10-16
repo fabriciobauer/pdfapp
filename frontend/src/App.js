@@ -10,6 +10,9 @@ function App() {
   const [imagensSelecionadas, setImagensSelecionadas] = useState([]);
   const [descricaoEditavel, setDescricaoEditavel] = useState('');
   const [nomePDF, setNomePDF] = useState('');
+  const [token, setToken] = useState(null);
+  const [username, setUsername] = useState('');
+  const [senha, setSenha] = useState('');
   const textareaRef = useRef(null);
 
   // Função para ajustar a altura da textarea automaticamente
@@ -20,16 +23,37 @@ function App() {
     }
   };
 
-  // Função para buscar o imóvel e suas fotos pelo código (sem uso de token)
+  // Função para realizar login
+  const login = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('https://pdf-4mtx.onrender.com/login', { username, senha });
+      const { token } = response.data;
+      setToken(token);
+      localStorage.setItem('token', token); // Armazenar o token no localStorage
+      alert('Login bem-sucedido');
+    } catch (error) {
+      alert('Erro ao fazer login. Verifique suas credenciais.');
+      console.error('Erro ao fazer login:', error);
+    }
+  };
+
+  // Função para buscar o imóvel e suas fotos pelo código
   const buscarImovel = async () => {
     try {
-      const response = await axios.get(`http://192.168.0.00:3001/imovel/${codigoImovel}/fotos`);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error("Token não encontrado. Faça login.");
+      const response = await axios.get(`https://pdf-4mtx.onrender.com/imovel/${codigoImovel}/fotos`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setImovel(response.data.imovel);
       setFotos(response.data.fotos);
       setDescricaoEditavel(response.data.imovel.descricao);
       setImagensSelecionadas([]);
     } catch (error) {
-      alert('Erro ao buscar dados do imóvel.');
+      alert('Erro ao buscar dados do imóvel. Certifique-se de que está logado.');
       console.error('Erro ao buscar dados do imóvel:', error);
     }
   };
@@ -43,12 +67,17 @@ function App() {
     }
   };
 
-  // Função para gerar o PDF com as imagens selecionadas (sem uso de token)
+  // Função para gerar o PDF com as imagens selecionadas
   const gerarPDF = async () => {
     try {
-      const response = await axios.post('http://192.168.0.00:3001/gerar-pdf', {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error("Token não encontrado. Faça login.");
+      const response = await axios.post('https://pdf-4mtx.onrender.com/gerar-pdf', {
         imagensSelecionadas,
       }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         responseType: 'blob',
       });
 
@@ -60,41 +89,17 @@ function App() {
       link.click();
     } catch (error) {
       console.error('Erro ao gerar o PDF:', error);
-      alert('Erro ao gerar o PDF.');
+      alert('Erro ao gerar o PDF. Certifique-se de que está logado.');
     }
   };
 
   // Função para copiar a descrição para a área de transferência
   const copiarDescricao = () => {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(descricaoEditavel)
-        .then(() => {
-          alert('Texto copiado para a área de transferência!');
-        })
-        .catch(err => {
-          console.error('Erro ao copiar o texto:', err);
-          alert('Não foi possível copiar o texto. Por favor, tente novamente.');
-        });
-    } else {
-      const textarea = document.createElement('textarea');
-      textarea.value = descricaoEditavel;
-      textarea.style.position = 'absolute';
-      textarea.style.left = '-9999px'; 
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        const sucesso = document.execCommand('copy');
-        if (sucesso) {
-          alert('Texto copiado para a área de transferência!');
-        } else {
-          alert('Não foi possível copiar o texto. Por favor, tente novamente.');
-        }
-      } catch (err) {
-        console.error('Erro ao copiar o texto:', err);
-        alert('Não foi possível copiar o texto. Por favor, tente novamente.');
-      }
-      document.body.removeChild(textarea);
-    }
+    navigator.clipboard.writeText(descricaoEditavel).then(() => {
+      alert('Texto copiado para a área de transferência!');
+    }).catch(err => {
+      console.error('Erro ao copiar o texto:', err);
+    });
   };
 
   useEffect(() => {
@@ -115,63 +120,91 @@ function App() {
         </a>
       </div>
 
-      <h1>Buscar Imóvel pelo Código</h1>
-      <input
-        type="text"
-        value={codigoImovel}
-        onChange={(e) => setCodigoImovel(e.target.value)}
-        placeholder="Ex. NB04940149"
-        style={{ padding: '10px', marginBottom: '10px', borderRadius: '5px', width: '100%' }}
-      />
-      <button onClick={buscarImovel} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
-        Buscar Imóvel
-      </button>
-
-      {imovel ? (
-        <div className="container">
-          <h2>{imovel.nome}</h2>
-          <textarea
-            ref={textareaRef}
-            value={descricaoEditavel}
-            onChange={(e) => setDescricaoEditavel(e.target.value)}
-            rows="1"
-            style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '10px' }}
-          />
-          <button onClick={copiarDescricao} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
-            Copiar Descrição
-          </button>
-
-          <h3>Fotos:</h3>
-          <ul>
-            {fotos.map((foto, index) => (
-              <li key={index}>
-                <img
-                  src={foto.foto}
-                  alt={`Foto ${index + 1}`}
-                  style={{
-                    border: imagensSelecionadas.includes(foto.foto) ? '3px solid green' : '1px solid gray',
-                    width: '100%',
-                    marginBottom: '10px',
-                  }}
-                  onClick={() => selecionarImagem(foto.foto)}
-                />
-              </li>
-            ))}
-          </ul>
-
+      {/* Formulário de Login */}
+      {!token ? (
+        <form onSubmit={login}>
+          <h2>Login</h2>
           <input
             type="text"
-            value={nomePDF}
-            onChange={(e) => setNomePDF(e.target.value)}
-            placeholder="Digite o nome do arquivo PDF"
-            style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}
+            placeholder="Usuário"
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            style={{ padding: '10px', marginBottom: '10px', borderRadius: '5px', width: '90%' }}
           />
-          <button onClick={gerarPDF} disabled={imagensSelecionadas.length === 0} style={{ width: '100%', padding: '10px', borderRadius: '5px' }}>
-            Gerar PDF
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            required
+            style={{ padding: '10px', marginBottom: '10px', borderRadius: '5px', width: '85%' }}
+          />
+          <button type="submit" style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
+            Entrar
           </button>
-        </div>
+        </form>
       ) : (
-        <p></p>
+        <>
+          <h1>Buscar Imóvel pelo Código</h1>
+          <input
+            type="text"
+            value={codigoImovel}
+            onChange={(e) => setCodigoImovel(e.target.value)}
+            placeholder="Ex. NB04940149"
+            style={{ padding: '10px', marginBottom: '10px', borderRadius: '5px', width: '100%' }}
+          />
+          <button onClick={buscarImovel} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
+            Buscar Imóvel
+          </button>
+
+          {imovel ? (
+            <div className="container">
+              <h2>{imovel.nome}</h2>
+              <textarea
+                ref={textareaRef}
+                value={descricaoEditavel}
+                onChange={(e) => setDescricaoEditavel(e.target.value)}
+                rows="1"
+                style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '10px' }}
+              />
+              <button onClick={copiarDescricao} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}>
+                Copiar Descrição
+              </button>
+
+              <h3>Fotos:</h3>
+              <ul>
+                {fotos.map((foto, index) => (
+                  <li key={index}>
+                    <img
+                      src={foto.foto}
+                      alt={`Foto ${index + 1}`}
+                      style={{
+                        border: imagensSelecionadas.includes(foto.foto) ? '3px solid green' : '1px solid gray',
+                        width: '100%',
+                        marginBottom: '10px',
+                      }}
+                      onClick={() => selecionarImagem(foto.foto)}
+                    />
+                  </li>
+                ))}
+              </ul>
+
+              <input
+                type="text"
+                value={nomePDF}
+                onChange={(e) => setNomePDF(e.target.value)}
+                placeholder="Digite o nome do arquivo PDF"
+                style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '5px' }}
+              />
+              <button onClick={gerarPDF} disabled={imagensSelecionadas.length === 0} style={{ width: '100%', padding: '10px', borderRadius: '5px' }}>
+                Gerar PDF
+              </button>
+            </div>
+          ) : (
+            <p></p>
+          )}
+        </>
       )}
     </div>
   );
